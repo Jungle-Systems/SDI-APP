@@ -35,7 +35,6 @@ export default function DashboardPage() {
 
       {/* Page header */}
       <div className="mb-8">
-        <div className="section-label mb-3">SEC_01 — Portfolio Overview</div>
         <h1 className="text-2xl font-light text-[#111827] tracking-tight mb-1">
           {mockPortfolio.name}
         </h1>
@@ -46,15 +45,18 @@ export default function DashboardPage() {
           <span className="text-[#E5E7EB]">|</span>
           <span className="badge badge-low">{mockPortfolio.sfdr_article}</span>
         </div>
+        <p className="text-[12px] text-[#9CA3AF] mt-2">
+          Systemic constraint exposure across portfolio companies — based on CSRD &amp; IFRS disclosure analysis.
+        </p>
       </div>
 
       {/* KPI strip */}
       <div className="grid grid-cols-4 gap-4 mb-10">
         {[
           { label: 'Companies', value: String(mockPortfolio.company_count), sub: `${completeCount} analysed` },
-          { label: 'Collision Flags', value: String(totalFlags), sub: 'across all filings', accent: true },
-          { label: 'Fragile Holdings', value: String(fragileCount), sub: 'revenue durability', alert: true },
-          { label: 'AUM Exposed', value: '58%', sub: 'temporal transition risk', warn: true },
+          { label: 'Risk Flags', value: String(totalFlags), sub: 'unverified claims found', accent: true },
+          { label: 'At-Risk Holdings', value: String(fragileCount), sub: 'fragile revenue durability', alert: true },
+          { label: 'AUM Exposed', value: '58%', sub: 'transition constraint risk', warn: true },
         ].map(k => (
           <div key={k.label} className="card">
             <div className="mono-label text-[#9CA3AF] mb-2">{k.label}</div>
@@ -69,7 +71,8 @@ export default function DashboardPage() {
       <div className="grid grid-cols-5 gap-6 mb-10">
         {/* AUM Exposure Chart */}
         <div className="col-span-3 card">
-          <div className="section-label mb-5">SEC_02 — AUM Exposure by Constraint Type</div>
+          <div className="text-[11px] font-semibold text-[#374151] mb-1">AUM Exposure by Constraint Type</div>
+          <p className="text-[11px] text-[#9CA3AF] mb-5">What share of portfolio AUM is exposed to each type of systemic constraint.</p>
           <ResponsiveContainer width="100%" height={200}>
             <BarChart data={chartData} layout="vertical" margin={{ left: 0, right: 20, top: 0, bottom: 0 }}>
               <XAxis type="number" domain={[0, 70]} tick={{ fontSize: 10, fill: '#9CA3AF', fontFamily: 'monospace' }} tickLine={false} axisLine={false} tickFormatter={v => `${v}%`} />
@@ -87,7 +90,7 @@ export default function DashboardPage() {
             </BarChart>
           </ResponsiveContainer>
           <div className="flex items-center gap-5 mt-4">
-            {[['#E14A2D', 'Concentration flag'], ['#178395', 'Systemic'], ['#93C5D0', 'Company-specific']].map(([c, l]) => (
+            {[['#E14A2D', 'Concentrated risk'], ['#178395', 'Systemic'], ['#93C5D0', 'Company-specific']].map(([c, l]) => (
               <span key={l} className="flex items-center gap-1.5 text-[10px] font-mono text-[#6B7280]">
                 <span className="inline-block w-2 h-2 rounded-sm" style={{ background: c }} />{l}
               </span>
@@ -97,10 +100,11 @@ export default function DashboardPage() {
 
         {/* Revenue Durability */}
         <div className="col-span-2 card">
-          <div className="section-label mb-5">SEC_03 — Revenue Durability</div>
+          <div className="text-[11px] font-semibold text-[#374151] mb-1">Revenue Durability</div>
+          <p className="text-[11px] text-[#9CA3AF] mb-5">How exposed each company&apos;s revenue is to constraint tightening.</p>
           <div className="flex flex-col gap-4">
             {mockCollisionReports.map(r => (
-              <Link key={r.id} href={`/collisions/${r.company_id}`} className="group block">
+              <Link key={r.id} href={`/claim-verification/${r.company_id}`} className="group block">
                 <div className="flex items-center justify-between mb-1.5">
                   <span className="text-[12px] text-[#111827] group-hover:text-[#178395] transition-colors">{r.company_name.split(' ')[0]}</span>
                   <span className="font-mono text-[10px]" style={{ color: durabilityColor[r.revenue_durability] }}>
@@ -123,16 +127,17 @@ export default function DashboardPage() {
 
       {/* Company table */}
       <div className="card">
-        <div className="section-label mb-5">SEC_04 — Portfolio Companies</div>
+        <div className="text-[11px] font-semibold text-[#374151] mb-1">Portfolio Companies</div>
+        <p className="text-[11px] text-[#9CA3AF] mb-5">Analysis status and triage priority for each portfolio company.</p>
         <table className="data-table">
           <thead>
             <tr>
               <th>Company</th>
               <th>Sector</th>
-              <th>Juris.</th>
-              <th>Filing</th>
-              <th>Triage</th>
-              <th>NIR</th>
+              <th>Country</th>
+              <th>Report Type</th>
+              <th>Priority</th>
+              <th>Net Impact</th>
               <th>Status</th>
               <th></th>
             </tr>
@@ -173,7 +178,7 @@ export default function DashboardPage() {
                       <div className="flex items-center gap-2 justify-end">
                         <Link href={`/constraints/${c.id}`} className="text-[11px] text-[#178395] hover:underline">Constraints</Link>
                         <span className="text-[#E5E7EB]">|</span>
-                        <Link href={`/collisions/${c.id}`} className="text-[11px] text-[#E14A2D] hover:underline flex items-center gap-1">
+                        <Link href={`/claim-verification/${c.id}`} className="text-[11px] text-[#E14A2D] hover:underline flex items-center gap-1">
                           {report ? `${report.collision_flag_count} flags` : 'Report'}
                           <ArrowRight size={10} />
                         </Link>

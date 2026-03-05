@@ -7,7 +7,7 @@ const nav = [
   { href: '/',            label: 'Portfolio',   icon: LayoutDashboard, code: '01' },
   { href: '/upload',      label: 'Upload',      icon: Upload,          code: '02' },
   { href: '/constraints', label: 'Constraints', icon: GitMerge,        code: '03' },
-  { href: '/collisions',  label: 'Collisions',  icon: AlertTriangle,   code: '04' },
+  { href: '/claim-verification', label: 'Claim Verify', icon: AlertTriangle, code: '04' },
   { href: '/export',      label: 'Export',      icon: Download,        code: '05' },
 ]
 
