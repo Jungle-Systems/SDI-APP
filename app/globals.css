@@ -1,0 +1,110 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap');
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --teal: #178395;
+  --vermilion: #E14A2D;
+  --ground: #FDFDFC;
+}
+
+body {
+  background-color: #FDFDFC;
+  color: #111827;
+  font-family: 'Inter', system-ui, sans-serif;
+  font-size: 14px;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Section label — matches jungle-systems.com "SEC_01 —— Title" style */
+.section-label {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.65rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: #178395;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.section-label::after {
+  content: '';
+  display: block;
+  height: 1px;
+  width: 40px;
+  background: #E5E7EB;
+}
+
+/* Utility: mono label */
+.mono-label {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.65rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+/* Data table */
+.data-table { width: 100%; font-size: 0.875rem; }
+.data-table th {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.6rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: #6B7280;
+  border-bottom: 1px solid #E5E7EB;
+  padding: 8px 0;
+  text-align: left;
+  font-weight: 400;
+}
+.data-table td {
+  padding: 12px 0;
+  border-bottom: 1px solid #E5E7EB;
+  vertical-align: top;
+}
+.data-table tr:last-child td { border-bottom: 0; }
+.data-table tr:hover td { background-color: rgba(23, 131, 149, 0.03); }
+
+/* Badges */
+.badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 8px;
+  border-radius: 2px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.6rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+.badge-high    { background: #FDEEE9; color: #E14A2D; }
+.badge-medium  { background: #FFFBEB; color: #B45309; }
+.badge-low     { background: #E8F4F6; color: #178395; }
+.badge-pass    { background: #ECFDF5; color: #059669; }
+.badge-r1      { background: #E8F4F6; color: #178395; }
+.badge-r2      { background: #FFFBEB; color: #B45309; }
+.badge-r3      { background: #FDEEE9; color: #E14A2D; }
+
+/* Card */
+.card {
+  background: #FFFFFF;
+  border: 1px solid #E5E7EB;
+  padding: 20px;
+}
+
+/* Score bar */
+.score-bar-track {
+  height: 3px;
+  background: #E5E7EB;
+  border-radius: 2px;
+  overflow: hidden;
+}
+.score-bar-fill {
+  height: 100%;
+  border-radius: 2px;
+  background: #178395;
+}
+
+/* Scrollbar */
+::-webkit-scrollbar { width: 4px; height: 4px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: #D1D5DB; border-radius: 2px; }
