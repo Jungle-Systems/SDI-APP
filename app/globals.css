@@ -1,110 +1,91 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400&family=JetBrains+Mono:wght@400;500&display=swap');
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
 :root {
-  --teal: #178395;
+  --teal:      #178395;
   --vermilion: #E14A2D;
-  --ground: #FDFDFC;
+  --ground:    #FAFAFA;
 }
 
 body {
-  background-color: #FDFDFC;
-  color: #111827;
+  background-color: var(--ground);
+  color: #0f172a;
   font-family: 'Inter', system-ui, sans-serif;
   font-size: 14px;
   -webkit-font-smoothing: antialiased;
 }
 
-/* Section label — matches jungle-systems.com "SEC_01 —— Title" style */
-.section-label {
-  font-family: 'JetBrains Mono', monospace;
-  font-size: 0.65rem;
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
-  color: #178395;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-.section-label::after {
-  content: '';
-  display: block;
-  height: 1px;
-  width: 40px;
-  background: #E5E7EB;
-}
-
-/* Utility: mono label */
+/* ── Mono label ─────────────────────────────────────────────────────────────── */
 .mono-label {
   font-family: 'JetBrains Mono', monospace;
-  font-size: 0.65rem;
-  letter-spacing: 0.08em;
+  font-size: 0.625rem;
+  letter-spacing: 0.1em;
   text-transform: uppercase;
 }
 
-/* Data table */
-.data-table { width: 100%; font-size: 0.875rem; }
+/* ── Card ───────────────────────────────────────────────────────────────────── */
+.card {
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  padding: 20px;
+}
+
+/* ── Data table ─────────────────────────────────────────────────────────────── */
+.data-table { width: 100%; font-size: 0.8125rem; }
 .data-table th {
   font-family: 'JetBrains Mono', monospace;
-  font-size: 0.6rem;
+  font-size: 0.59rem;
   letter-spacing: 0.1em;
   text-transform: uppercase;
-  color: #6B7280;
-  border-bottom: 1px solid #E5E7EB;
+  color: #94a3b8;
+  border-bottom: 1px solid #f1f5f9;
   padding: 8px 0;
   text-align: left;
   font-weight: 400;
 }
 .data-table td {
   padding: 12px 0;
-  border-bottom: 1px solid #E5E7EB;
-  vertical-align: top;
+  border-bottom: 1px solid #f1f5f9;
+  vertical-align: middle;
 }
 .data-table tr:last-child td { border-bottom: 0; }
-.data-table tr:hover td { background-color: rgba(23, 131, 149, 0.03); }
+.data-table tr:hover td    { background-color: #f8fafc; }
 
-/* Badges */
+/* ── Badges ─────────────────────────────────────────────────────────────────── */
 .badge {
   display: inline-flex;
   align-items: center;
   padding: 2px 8px;
-  border-radius: 2px;
+  border-radius: 4px;
   font-family: 'JetBrains Mono', monospace;
-  font-size: 0.6rem;
+  font-size: 0.59rem;
   letter-spacing: 0.08em;
   text-transform: uppercase;
 }
-.badge-high    { background: #FDEEE9; color: #E14A2D; }
-.badge-medium  { background: #FFFBEB; color: #B45309; }
-.badge-low     { background: #E8F4F6; color: #178395; }
-.badge-pass    { background: #ECFDF5; color: #059669; }
-.badge-r1      { background: #E8F4F6; color: #178395; }
-.badge-r2      { background: #FFFBEB; color: #B45309; }
-.badge-r3      { background: #FDEEE9; color: #E14A2D; }
+.badge-high   { background: #fef2f2; color: #dc2626; }
+.badge-medium { background: #fffbeb; color: #d97706; }
+.badge-low    { background: #f0f9ff; color: #0284c7; }
+.badge-pass   { background: #f0fdf4; color: #16a34a; }
+.badge-r1     { background: #f0f9ff; color: #0284c7; }
+.badge-r2     { background: #fffbeb; color: #d97706; }
+.badge-r3     { background: #fef2f2; color: #dc2626; }
 
-/* Card */
-.card {
-  background: #FFFFFF;
-  border: 1px solid #E5E7EB;
-  padding: 20px;
-}
-
-/* Score bar */
+/* ── Score bar ──────────────────────────────────────────────────────────────── */
 .score-bar-track {
   height: 3px;
-  background: #E5E7EB;
-  border-radius: 2px;
+  background: #e2e8f0;
+  border-radius: 99px;
   overflow: hidden;
 }
 .score-bar-fill {
   height: 100%;
-  border-radius: 2px;
-  background: #178395;
+  border-radius: 99px;
 }
 
-/* Scrollbar */
-::-webkit-scrollbar { width: 4px; height: 4px; }
+/* ── Scrollbar ──────────────────────────────────────────────────────────────── */
+::-webkit-scrollbar       { width: 4px; height: 4px; }
 ::-webkit-scrollbar-track { background: transparent; }
-::-webkit-scrollbar-thumb { background: #D1D5DB; border-radius: 2px; }
+::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 2px; }
