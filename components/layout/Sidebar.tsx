@@ -1,63 +1,83 @@
 'use client'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { LayoutDashboard, Upload, GitMerge, AlertTriangle, Download } from 'lucide-react'
+import { LayoutDashboard, Network, Upload, FileDown } from 'lucide-react'
 
 const nav = [
-  { href: '/',            label: 'Portfolio',   icon: LayoutDashboard, code: '01' },
-  { href: '/upload',      label: 'Upload',      icon: Upload,          code: '02' },
-  { href: '/constraints', label: 'Constraints', icon: GitMerge,        code: '03' },
-  { href: '/claim-verification', label: 'Claim Verify', icon: AlertTriangle, code: '04' },
-  { href: '/export',      label: 'Export',      icon: Download,        code: '05' },
+  { href: '/',             label: 'Portfolio Dashboard', icon: LayoutDashboard },
+  { href: '/exposure-map', label: 'Exposure Map',        icon: Network         },
 ]
 
 export default function Sidebar() {
   const path = usePathname()
 
   return (
-    <aside className="w-52 min-h-screen border-r border-[#E5E7EB] bg-[#FDFDFC] flex flex-col py-8 px-5 shrink-0">
+    <aside className="w-56 min-h-screen border-r border-[#E5E7EB] bg-[#FAFAFA] flex flex-col shrink-0">
+
       {/* Wordmark */}
-      <div className="mb-10">
-        <div className="text-[10px] font-mono tracking-[0.18em] uppercase text-[#6B7280] mb-0.5">
+      <div className="px-6 pt-8 pb-6 border-b border-[#E5E7EB]">
+        <div className="text-[9px] font-mono tracking-[0.2em] uppercase text-[#9CA3AF] mb-1">
           Jungle × Seawolf
         </div>
-        <div className="text-[13px] font-semibold tracking-tight text-[#111827] leading-tight">
+        <div className="text-[13px] font-semibold tracking-tight text-[#0F172A] leading-snug">
           Systemic Disclosure<br />Intelligence
         </div>
       </div>
 
-      {/* Nav */}
-      <nav className="flex flex-col gap-0.5">
-        {nav.map(({ href, label, icon: Icon, code }) => {
+      {/* Primary Nav */}
+      <nav className="flex flex-col gap-0.5 px-3 pt-4">
+        {nav.map(({ href, label, icon: Icon }) => {
           const active = href === '/' ? path === '/' : path.startsWith(href)
           return (
             <Link
               key={href}
               href={href}
-              className={`flex items-center gap-3 px-3 py-2.5 rounded-sm text-[13px] transition-colors group ${
+              className={`flex items-center gap-3 px-3 py-2.5 rounded-md text-[13px] font-medium transition-all group ${
                 active
-                  ? 'bg-[#178395]/8 text-[#178395]'
-                  : 'text-[#6B7280] hover:text-[#111827] hover:bg-[#F9FAFB]'
+                  ? 'bg-[#0F172A] text-white'
+                  : 'text-[#64748B] hover:text-[#0F172A] hover:bg-[#F1F5F9]'
               }`}
             >
-              <span className={`font-mono text-[9px] tracking-widest w-5 ${active ? 'text-[#178395]' : 'text-[#9CA3AF]'}`}>
-                {code}
-              </span>
-              <Icon size={13} strokeWidth={1.5} />
-              <span className="font-medium">{label}</span>
+              <Icon
+                size={14}
+                strokeWidth={active ? 2 : 1.5}
+                className={active ? 'text-white' : 'text-[#94A3B8] group-hover:text-[#0F172A]'}
+              />
+              {label}
             </Link>
           )
         })}
       </nav>
 
-      {/* Bottom meta */}
-      <div className="mt-auto">
-        <div className="h-px bg-[#E5E7EB] mb-4" />
-        <div className="text-[10px] font-mono text-[#9CA3AF] uppercase tracking-widest leading-relaxed">
-          Jungle-Staging<br />
-          <span className="text-[#178395]">● </span>Connected
+      {/* Spacer */}
+      <div className="flex-1" />
+
+      {/* Action Buttons */}
+      <div className="px-4 pb-6 flex flex-col gap-2">
+        <div className="h-px bg-[#E5E7EB] mb-3" />
+
+        <Link
+          href="/upload"
+          className="flex items-center justify-center gap-2 px-3 py-2 rounded-md text-[12px] font-medium border border-[#E2E8F0] bg-white text-[#374151] hover:bg-[#F8FAFC] hover:border-[#CBD5E1] transition-all"
+        >
+          <Upload size={12} strokeWidth={1.75} />
+          Upload Data
+        </Link>
+
+        <Link
+          href="/export"
+          className="flex items-center justify-center gap-2 px-3 py-2 rounded-md text-[12px] font-medium bg-[#178395] text-white hover:bg-[#146F7E] transition-all"
+        >
+          <FileDown size={12} strokeWidth={1.75} />
+          Export Report
+        </Link>
+
+        {/* Connection status */}
+        <div className="pt-2 text-[10px] font-mono text-[#9CA3AF] tracking-widest uppercase">
+          <span className="text-[#22C55E]">● </span>Connected
         </div>
       </div>
+
     </aside>
   )
 }
