@@ -1,232 +1,331 @@
 'use client'
-import { mockPortfolio, mockCompanies, mockPortfolioExposure, mockCollisionReports } from '@/lib/mock'
-import { CONSTRAINT_LABELS } from '@/lib/types'
-import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell } from 'recharts'
 import Link from 'next/link'
-import { ArrowUpRight, CheckCircle, Clock, AlertTriangle, Network, Search } from 'lucide-react'
+import { AlertTriangle, CheckCircle, Clock, XCircle, Upload, FileDown } from 'lucide-react'
+import {
+  mockPortfolio, mockCompanies, mockCollisionReports,
+  mockPortfolioExposure, mockExtractionRuns,
+} from '@/lib/mock'
+import { CONSTRAINT_LABELS, type ConstraintType } from '@/lib/types'
 
-const fmt  = (n: number) => `€${(n / 1_000_000).toFixed(0)}M`
-const fmtB = (n: number) => `€${(n / 1_000_000_000).toFixed(1)}B`
-
-const durColor: Record<string, string> = {
-  Resilient: '#16a34a',
-  Stable:    '#0284c7',
-  Exposed:   '#d97706',
-  Fragile:   '#dc2626',
+// ── Color helpers ──────────────────────────────────────────────────────
+const DUR: Record<string, { fg: string; bg: string; bar: string }> = {
+  Resilient: { fg: '#16a34a', bg: 'rgba(22,163,74,0.08)',  bar: '#16a34a' },
+  Stable:    { fg: '#178395', bg: 'rgba(23,131,149,0.08)', bar: '#178395' },
+  Exposed:   { fg: '#D97706', bg: 'rgba(217,119,6,0.08)',  bar: '#D97706' },
+  Fragile:   { fg: '#E14A2D', bg: 'rgba(225,74,45,0.08)',  bar: '#E14A2D' },
+  Pending:   { fg: '#94A3B8', bg: 'rgba(148,163,184,0.06)',bar: '#E2E8F0' },
 }
 
-function StatusPill({ s }: { s: string }) {
-  if (s === 'complete')   return <span className="flex items-center gap-1 text-[11px] text-emerald-600"><CheckCircle size={10} />Complete</span>
-  if (s === 'processing') return <span className="flex items-center gap-1 text-[11px] text-sky-500"><Clock size={10} />Processing</span>
-  if (s === 'failed')     return <span className="flex items-center gap-1 text-[11px] text-red-500"><AlertTriangle size={10} />Failed</span>
-  return <span className="flex items-center gap-1 text-[11px] text-slate-400"><Clock size={10} />Pending</span>
+function StatusIcon({ s }: { s: string }) {
+  if (s === 'complete')   return <CheckCircle size={12} color="#22c55e" />
+  if (s === 'processing') return <Clock size={12} color="#D97706" />
+  if (s === 'failed')     return <XCircle size={12} color="#E14A2D" />
+  return <div style={{ width: 12, height: 12, borderRadius: '50%', border: '1.5px solid #CBD5E1' }} />
 }
 
-export default function DashboardPage() {
-  const chartData = mockPortfolioExposure.map(e => ({
-    name: CONSTRAINT_LABELS[e.constraint_type].split(' & ')[0],
-    aum_pct: e.aum_pct,
-    systemic: e.is_systemic,
-    concentration: e.concentration_flag,
-  }))
+// Portfolio stats
+const totalFlags   = mockCollisionReports.reduce((s, r) => s + r.collision_flag_count, 0)
+const avgEbitda    = mockCollisionReports.reduce((s, r) => s + r.ebitda_base_pct, 0) / mockCollisionReports.length
+const fragileCount = mockCollisionReports.filter(r => r.revenue_durability === 'Fragile').length
 
-  const totalFlags   = mockCollisionReports.reduce((s, r) => s + r.collision_flag_count, 0)
-  const fragileCount = mockCollisionReports.filter(r => r.revenue_durability === 'Fragile').length
-  const doneCount    = mockCompanies.filter(c => c.disclosure_status === 'complete').length
+const durCounts = { Fragile: 0, Exposed: 0, Stable: 0, Resilient: 0, Pending: 0 }
+mockCompanies.forEach(c => {
+  const r = mockCollisionReports.find(x => x.company_id === c.id)
+  if (r) { (durCounts as any)[r.revenue_durability]++ }
+  else     durCounts.Pending++
+})
+const TOTAL = mockPortfolio.company_count
+const durOrder = ['Fragile','Exposed','Stable','Resilient','Pending'] as const
 
+export default function Dashboard() {
   return (
-    <div className="flex flex-col min-h-screen bg-[#FAFAFA]" style={{ fontFamily: "'Inter', system-ui, sans-serif" }}>
+    <div style={{ minHeight: '100vh', background: '#FDFDFC', fontFamily: "'Inter', sans-serif" }}>
 
-      {/* ── Header ── */}
-      <div className="flex items-center justify-between px-8 py-4 border-b border-slate-100 bg-white shrink-0">
+      {/* ─── Header ─── */}
+      <div style={{
+        padding: '20px 28px',
+        background: '#fff',
+        borderBottom: '1px solid #E2E8F0',
+        display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+      }}>
         <div>
-          <p className="text-[10px] font-mono tracking-widest uppercase text-slate-400 mb-0.5">
-            Portfolio Dashboard · {mockPortfolio.sfdr_article}
+          <p style={{ fontSize: 10, fontWeight: 600, letterSpacing: '0.12em', textTransform: 'uppercase', color: '#94A3B8', marginBottom: 4 }}>
+            {mockPortfolio.client_name} · {mockPortfolio.sfdr_article}
           </p>
-          <h1 className="text-[20px] font-semibold text-slate-900 tracking-tight">{mockPortfolio.name}</h1>
+          <h1 style={{ fontSize: 20, fontWeight: 700, color: '#0F172A', letterSpacing: '-0.4px' }}>
+            {mockPortfolio.name}
+          </h1>
         </div>
-        <div className="flex items-center gap-4">
-          <div className="text-right">
-            <p className="text-[10px] font-mono uppercase tracking-widest text-slate-400 mb-0.5">AUM</p>
-            <p className="text-[18px] font-bold text-slate-800 leading-none">{fmtB(mockPortfolio.aum_eur)}</p>
-            <p className="text-[11px] text-slate-400 mt-0.5">{mockPortfolio.client_name}</p>
-          </div>
-          <Link
-            href="/exposure-map"
-            className="flex items-center gap-2 px-4 py-2 rounded-lg bg-slate-900 text-white text-[12px] font-medium hover:bg-slate-700 transition-colors"
-          >
-            <Network size={13} />
-            Exposure Map
+
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+          {[
+            { v: `€${(mockPortfolio.aum_eur / 1e6).toFixed(0)}M`, l: 'AUM', c: '#0F172A' },
+            { v: String(mockPortfolio.company_count), l: 'Companies', c: '#0F172A' },
+            { v: String(totalFlags), l: 'Flags', c: '#E14A2D' },
+            { v: `${avgEbitda.toFixed(1)}%`, l: 'Avg EBITDA', c: '#E14A2D' },
+          ].map(k => (
+            <div key={k.l} style={{
+              padding: '6px 14px', borderRadius: 8,
+              background: '#F8FAFC', border: '1px solid #E2E8F0',
+              textAlign: 'center', minWidth: 72,
+            }}>
+              <div style={{ fontSize: 14, fontWeight: 700, color: k.c, fontFamily: "'JetBrains Mono', monospace" }}>{k.v}</div>
+              <div style={{ fontSize: 9, color: '#94A3B8', fontWeight: 600, letterSpacing: '0.08em', textTransform: 'uppercase', marginTop: 1 }}>{k.l}</div>
+            </div>
+          ))}
+
+          <div style={{ width: 1, height: 32, background: '#E2E8F0', margin: '0 4px' }} />
+
+          <Link href="/upload" style={{
+            display: 'inline-flex', alignItems: 'center', gap: 6,
+            padding: '8px 14px', borderRadius: 8, fontSize: 12, fontWeight: 500,
+            border: '1px solid #E2E8F0', background: '#fff', color: '#475569',
+            textDecoration: 'none',
+          }}>
+            <Upload size={12} /> Upload
+          </Link>
+          <Link href="/export" style={{
+            display: 'inline-flex', alignItems: 'center', gap: 6,
+            padding: '8px 14px', borderRadius: 8, fontSize: 12, fontWeight: 600,
+            background: '#178395', color: '#fff', textDecoration: 'none',
+          }}>
+            <FileDown size={12} /> Export
           </Link>
         </div>
       </div>
 
-      {/* ── Scrollable content ── */}
-      <div className="flex-1 overflow-auto px-8 py-7">
-
-        {/* ── KPI strip ── */}
-        <div className="grid grid-cols-4 gap-4 mb-7">
-          {[
-            { label: 'Companies',       value: String(mockPortfolio.company_count), sub: `${doneCount} analysed`,             color: 'text-slate-900' },
-            { label: 'Risk Flags',      value: String(totalFlags),                  sub: 'unverified disclosure claims',       color: 'text-red-500'   },
-            { label: 'At-Risk Holdings',value: String(fragileCount),                sub: 'fragile revenue durability',         color: 'text-amber-500' },
-            { label: 'AUM Exposed',     value: '58%',                               sub: 'facing transition constraint risk',  color: 'text-amber-600' },
-          ].map(k => (
-            <div key={k.label} className="card flex flex-col gap-1">
-              <p className="mono-label text-slate-400">{k.label}</p>
-              <p className={`text-[32px] font-bold leading-none tracking-tight mt-1 ${k.color}`}>{k.value}</p>
-              <p className="text-[11px] text-slate-400 mt-0.5">{k.sub}</p>
-            </div>
+      {/* ─── Portfolio risk bar ─── */}
+      <div style={{ padding: '14px 28px', background: '#fff', borderBottom: '1px solid #E2E8F0' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 8 }}>
+          <span style={{ fontSize: 10, fontWeight: 600, color: '#94A3B8', letterSpacing: '0.1em', textTransform: 'uppercase' }}>Portfolio Risk Profile</span>
+          <span style={{ fontSize: 10, color: '#94A3B8' }}>— {fragileCount} of {TOTAL} companies Fragile</span>
+        </div>
+        <div style={{ display: 'flex', height: 6, borderRadius: 99, overflow: 'hidden', gap: 2 }}>
+          {durOrder.map(d => {
+            const n = durCounts[d]
+            if (!n) return null
+            return <div key={d} style={{ flex: n, background: DUR[d].bar, borderRadius: 99 }} />
+          })}
+        </div>
+        <div style={{ display: 'flex', gap: 18, marginTop: 8, flexWrap: 'wrap' }}>
+          {durOrder.filter(d => durCounts[d] > 0).map(d => (
+            <span key={d} style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: 11, color: '#475569' }}>
+              <span style={{ width: 8, height: 8, borderRadius: 2, background: DUR[d].bar, display: 'inline-block' }} />
+              {d} <strong style={{ color: DUR[d].fg, fontFamily: "'JetBrains Mono', monospace" }}>{((durCounts[d] / TOTAL) * 100).toFixed(0)}%</strong>
+            </span>
           ))}
         </div>
+      </div>
 
-        {/* ── Chart + Durability ── */}
-        <div className="grid grid-cols-5 gap-5 mb-7">
+      {/* ─── Main grid ─── */}
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 292px', alignItems: 'start' }}>
 
-          {/* AUM Exposure Chart */}
-          <div className="col-span-3 card">
-            <p className="text-[12px] font-semibold text-slate-700 mb-0.5">AUM Exposure by Constraint Type</p>
-            <p className="text-[11px] text-slate-400 mb-5">Share of portfolio AUM exposed to each systemic constraint.</p>
-            <ResponsiveContainer width="100%" height={210}>
-              <BarChart data={chartData} layout="vertical" margin={{ left: 0, right: 20, top: 0, bottom: 0 }}>
-                <XAxis
-                  type="number" domain={[0, 70]}
-                  tick={{ fontSize: 10, fill: '#94a3b8', fontFamily: 'JetBrains Mono' }}
-                  tickLine={false} axisLine={false}
-                  tickFormatter={v => `${v}%`}
-                />
-                <YAxis
-                  type="category" dataKey="name" width={130}
-                  tick={{ fontSize: 11, fill: '#475569' }}
-                  tickLine={false} axisLine={false}
-                />
-                <Tooltip
-                  cursor={{ fill: 'rgba(15,23,42,0.03)' }}
-                  contentStyle={{ border: '1px solid #e2e8f0', borderRadius: 8, fontSize: 11, background: '#fff', boxShadow: '0 4px 12px rgba(0,0,0,0.06)' }}
-                  formatter={(v: number | undefined) => [`${v ?? 0}% AUM`, 'Exposure']}
-                />
-                <Bar dataKey="aum_pct" radius={[0, 4, 4, 0]} barSize={11}>
-                  {chartData.map((d, i) => (
-                    <Cell key={i} fill={d.concentration ? '#ef4444' : d.systemic ? '#178395' : '#93c5d0'} />
-                  ))}
-                </Bar>
-              </BarChart>
-            </ResponsiveContainer>
-            <div className="flex items-center gap-5 mt-4 pt-3 border-t border-slate-100">
-              {[['#ef4444', 'Concentrated risk'], ['#178395', 'Systemic'], ['#93c5d0', 'Company-specific']].map(([c, l]) => (
-                <span key={l} className="flex items-center gap-1.5 text-[10px] font-mono text-slate-500">
-                  <span className="inline-block w-2.5 h-2.5 rounded-sm" style={{ background: c }} />{l}
-                </span>
-              ))}
-            </div>
-          </div>
+        {/* Company cards */}
+        <div style={{ padding: '24px 28px', borderRight: '1px solid #E2E8F0' }}>
+          <p style={{ fontSize: 10, fontWeight: 600, color: '#94A3B8', letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: 16 }}>Companies</p>
 
-          {/* Revenue Durability */}
-          <div className="col-span-2 card flex flex-col">
-            <p className="text-[12px] font-semibold text-slate-700 mb-0.5">Revenue Durability</p>
-            <p className="text-[11px] text-slate-400 mb-5">Constraint exposure relative to revenue resilience.</p>
-            <div className="flex flex-col gap-4 flex-1">
-              {mockCollisionReports.map(r => (
-                <Link key={r.id} href={`/company/${r.company_id}`} className="group block">
-                  <div className="flex items-center justify-between mb-1.5">
-                    <span className="text-[12px] font-medium text-slate-700 group-hover:text-slate-900 transition-colors">
-                      {r.company_name.split(' ')[0]}
-                    </span>
-                    <span className="font-mono text-[10px] font-semibold" style={{ color: durColor[r.revenue_durability] }}>
-                      {r.revenue_durability}
-                    </span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <div className="score-bar-track flex-1">
-                      <div
-                        className="score-bar-fill"
-                        style={{ width: `${Math.min(Math.abs(r.ebitda_extreme_pct) * 3.2, 100)}%`, background: durColor[r.revenue_durability] }}
-                      />
-                    </div>
-                    <span className="font-mono text-[10px] text-slate-400 w-14 text-right tabular-nums">
-                      {r.ebitda_extreme_pct.toFixed(1)}%
-                    </span>
-                  </div>
-                </Link>
-              ))}
-            </div>
-          </div>
-        </div>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 12 }}>
+            {mockCompanies.map(company => {
+              const report   = mockCollisionReports.find(r => r.company_id === company.id)
+              const dur      = report?.revenue_durability ?? null
+              const ds       = dur ? DUR[dur] : DUR.Pending
+              const nir      = company.upright_nir_score ?? null
+              const canOpen  = !!report
 
-        {/* ── Company table ── */}
-        <div className="card">
-          <p className="text-[12px] font-semibold text-slate-700 mb-0.5">Portfolio Companies</p>
-          <p className="text-[11px] text-slate-400 mb-5">Analysis status, triage priority, and disclosure links.</p>
-          <table className="data-table">
-            <thead>
-              <tr>
-                <th>Company</th>
-                <th>Sector</th>
-                <th>Country</th>
-                <th>Report</th>
-                <th>Priority</th>
-                <th>Net Impact</th>
-                <th>Status</th>
-                <th className="text-right">Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              {mockCompanies.map(c => {
-                const report = mockCollisionReports.find(r => r.company_id === c.id)
-                return (
-                  <tr key={c.id}>
-                    <td className="font-medium text-slate-800 pr-4 text-[13px]">{c.name}</td>
-                    <td className="text-slate-500 pr-4 text-[12px]">{c.sector}</td>
-                    <td className="font-mono text-[11px] text-slate-400 pr-4">{c.jurisdiction}</td>
-                    <td className="pr-4">
-                      {c.filing_type
-                        ? <span className="badge badge-low">{c.filing_type.replace('_', '\u00A0')}</span>
-                        : <span className="text-slate-300">—</span>}
-                    </td>
-                    <td className="pr-4">
-                      <span className={`badge ${c.triage_priority === 'High' ? 'badge-high' : c.triage_priority === 'Medium' ? 'badge-medium' : 'badge-low'}`}>
-                        {c.triage_priority}
-                      </span>
-                    </td>
-                    <td className="pr-4 tabular-nums">
-                      {c.upright_nir_score !== undefined
-                        ? <span className={`font-mono text-[11px] font-semibold ${c.upright_nir_score >= 0 ? 'text-emerald-600' : 'text-red-500'}`}>
-                            {c.upright_nir_score >= 0 ? '+' : ''}{c.upright_nir_score.toFixed(2)}
-                          </span>
-                        : <span className="text-slate-300">—</span>}
-                    </td>
-                    <td className="pr-4">
-                      <StatusPill s={c.disclosure_status} />
-                    </td>
-                    <td className="text-right">
-                      {c.disclosure_status === 'complete' && (
-                        <div className="flex items-center gap-3 justify-end">
-                          <Link
-                            href={`/company/${c.id}`}
-                            className="flex items-center gap-1 text-[11px] font-medium text-slate-700 hover:text-slate-900 px-2.5 py-1 rounded-md bg-slate-100 hover:bg-slate-200 transition-colors"
-                          >
-                            <Search size={10} />
-                            Analyse
-                          </Link>
-                          {report && (
-                            <Link
-                              href={`/company/${c.id}`}
-                              className="flex items-center gap-1 text-[11px] font-medium text-red-600 hover:text-red-800 px-2.5 py-1 rounded-md bg-red-50 hover:bg-red-100 transition-colors"
-                            >
-                              {report.collision_flag_count} flags
-                              <ArrowUpRight size={10} />
-                            </Link>
-                          )}
+              return (
+                <Link key={company.id} href={canOpen ? `/company/${company.id}` : '#'} style={{ textDecoration: 'none' }}>
+                  <div style={{
+                    background: '#fff',
+                    border: '1px solid #E2E8F0',
+                    borderRadius: 12,
+                    overflow: 'hidden',
+                    boxShadow: '0 1px 3px rgba(0,0,0,0.05)',
+                    transition: 'all 0.15s',
+                    opacity: canOpen ? 1 : 0.55,
+                    cursor: canOpen ? 'pointer' : 'default',
+                    display: 'flex', flexDirection: 'column',
+                  }}
+                  onMouseEnter={e => { if (canOpen) { const el = e.currentTarget as HTMLElement; el.style.boxShadow = '0 6px 20px rgba(0,0,0,0.1)'; el.style.transform = 'translateY(-2px)'; el.style.borderColor = '#CBD5E1' } }}
+                  onMouseLeave={e => { if (canOpen) { const el = e.currentTarget as HTMLElement; el.style.boxShadow = '0 1px 3px rgba(0,0,0,0.05)'; el.style.transform = ''; el.style.borderColor = '#E2E8F0' } }}
+                  >
+                    {/* Color strip */}
+                    <div style={{ height: 3, background: ds.bar }} />
+
+                    <div style={{ padding: '14px 16px 12px', flex: 1 }}>
+                      {/* Name + badge */}
+                      <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 8, marginBottom: 10 }}>
+                        <div>
+                          <p style={{ fontSize: 13, fontWeight: 700, color: '#0F172A', lineHeight: 1.3, marginBottom: 3 }}>{company.name}</p>
+                          <p style={{ fontSize: 10, color: '#94A3B8' }}>{company.sector} · {company.jurisdiction}{company.filing_type ? ` · ${company.filing_type}` : ''}</p>
+                        </div>
+                        {dur && (
+                          <span style={{
+                            padding: '3px 8px', borderRadius: 6, flexShrink: 0,
+                            background: ds.bg, border: `1px solid ${ds.fg}30`,
+                            fontSize: 9, fontWeight: 700, color: ds.fg, letterSpacing: '0.07em', textTransform: 'uppercase',
+                          }}>{dur}</span>
+                        )}
+                      </div>
+
+                      {/* EBITDA bar */}
+                      {report && (
+                        <div style={{ marginBottom: 10 }}>
+                          <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 3 }}>
+                            <span style={{ fontSize: 9, color: '#94A3B8', fontWeight: 600, letterSpacing: '0.08em', textTransform: 'uppercase' }}>EBITDA exposure</span>
+                            <span style={{ fontSize: 9, fontFamily: "'JetBrains Mono', monospace", fontWeight: 700, color: '#E14A2D' }}>
+                              {report.ebitda_extreme_pct.toFixed(1)}% extreme
+                            </span>
+                          </div>
+                          <div style={{ height: 3, background: '#F1F5F9', borderRadius: 99, overflow: 'hidden' }}>
+                            <div style={{
+                              width: `${Math.min(100, Math.abs(report.ebitda_extreme_pct) * 3.5)}%`,
+                              height: '100%', borderRadius: 99,
+                              background: Math.abs(report.ebitda_extreme_pct) > 20 ? '#E14A2D'
+                                : Math.abs(report.ebitda_extreme_pct) > 10 ? '#D97706' : '#178395',
+                            }} />
+                          </div>
                         </div>
                       )}
-                    </td>
-                  </tr>
-                )
-              })}
-            </tbody>
-          </table>
+
+                      {/* Flags + priority + NIR */}
+                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                          {report ? (
+                            <span style={{
+                              display: 'flex', alignItems: 'center', gap: 4, fontSize: 11, fontWeight: 600,
+                              color: report.collision_flag_count >= 5 ? '#E14A2D' : report.collision_flag_count >= 3 ? '#D97706' : '#475569',
+                            }}>
+                              <AlertTriangle size={10} />
+                              {report.collision_flag_count} flags
+                            </span>
+                          ) : (
+                            <span style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 11, color: '#94A3B8' }}>
+                              <StatusIcon s={company.disclosure_status} />
+                              {company.disclosure_status}
+                            </span>
+                          )}
+                          <span style={{
+                            fontSize: 9, fontWeight: 700, padding: '2px 6px', borderRadius: 4,
+                            letterSpacing: '0.06em', textTransform: 'uppercase',
+                            color: company.triage_priority === 'High' ? '#E14A2D' : company.triage_priority === 'Medium' ? '#D97706' : '#94A3B8',
+                            background: company.triage_priority === 'High' ? 'rgba(225,74,45,0.07)' : company.triage_priority === 'Medium' ? 'rgba(217,119,6,0.07)' : '#F8FAFC',
+                          }}>{company.triage_priority}</span>
+                        </div>
+                        {nir !== null && (
+                          <span style={{ fontSize: 10, fontFamily: "'JetBrains Mono', monospace", fontWeight: 600, color: nir >= 0 ? '#178395' : '#E14A2D' }}>
+                            {nir >= 0 ? '+' : ''}{nir.toFixed(2)}
+                          </span>
+                        )}
+                      </div>
+                    </div>
+
+                    {canOpen && (
+                      <div style={{
+                        padding: '8px 16px',
+                        background: '#FAFAFA',
+                        borderTop: '1px solid #F1F5F9',
+                        textAlign: 'right',
+                      }}>
+                        <span style={{ fontSize: 11, fontWeight: 600, color: '#178395' }}>Open analysis →</span>
+                      </div>
+                    )}
+                  </div>
+                </Link>
+              )
+            })}
+          </div>
         </div>
 
+        {/* Sidebar */}
+        <div style={{ padding: '24px 18px', display: 'flex', flexDirection: 'column', gap: 22 }}>
+
+          {/* Systemic constraints */}
+          <div>
+            <p style={{ fontSize: 10, fontWeight: 600, color: '#94A3B8', letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: 14 }}>Systemic Constraints</p>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+              {[...mockPortfolioExposure].sort((a, b) => b.aum_pct - a.aum_pct).slice(0, 5).map(exp => {
+                const barColor = exp.aum_pct >= 50 ? '#E14A2D' : exp.aum_pct >= 30 ? '#D97706' : '#178395'
+                return (
+                  <div key={exp.constraint_type}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 4 }}>
+                      <span style={{ fontSize: 11, color: '#0F172A', fontWeight: 500 }}>{CONSTRAINT_LABELS[exp.constraint_type as ConstraintType]}</span>
+                      <span style={{ fontSize: 11, fontFamily: "'JetBrains Mono', monospace", fontWeight: 700, color: barColor, flexShrink: 0, marginLeft: 6 }}>{exp.aum_pct}%</span>
+                    </div>
+                    <div style={{ height: 4, background: '#F1F5F9', borderRadius: 99, overflow: 'hidden' }}>
+                      <div style={{ width: `${exp.aum_pct}%`, height: '100%', background: barColor, borderRadius: 99 }} />
+                    </div>
+                    <div style={{ display: 'flex', gap: 8, marginTop: 3 }}>
+                      {exp.is_systemic && <span style={{ fontSize: 9, color: '#94A3B8', fontWeight: 600, letterSpacing: '0.06em', textTransform: 'uppercase' }}>Systemic</span>}
+                      {exp.concentration_flag && <span style={{ fontSize: 9, color: '#E14A2D', fontWeight: 600, letterSpacing: '0.06em', textTransform: 'uppercase' }}>⚠ Concentrated</span>}
+                      <span style={{ fontSize: 9, color: '#CBD5E1' }}>{exp.affected_companies.length} co.</span>
+                    </div>
+                  </div>
+                )
+              })}
+            </div>
+          </div>
+
+          <div style={{ height: 1, background: '#F1F5F9' }} />
+
+          {/* Extraction queue */}
+          <div>
+            <p style={{ fontSize: 10, fontWeight: 600, color: '#94A3B8', letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: 12 }}>Extraction Queue</p>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 7 }}>
+              {mockExtractionRuns.map(run => (
+                <div key={run.id} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '7px 10px', borderRadius: 8, background: '#F8FAFC', border: '1px solid #F1F5F9' }}>
+                  <StatusIcon s={run.status} />
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <p style={{ fontSize: 11, fontWeight: 500, color: '#0F172A', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                      {run.company_name.split(' ').slice(0,2).join(' ')}
+                    </p>
+                    <p style={{ fontSize: 9, color: '#94A3B8', fontFamily: "'JetBrains Mono', monospace" }}>
+                      {run.status === 'complete' ? `${run.fields_extracted} fields` : run.status === 'running' ? 'Processing…' : run.status === 'failed' ? 'OCR needed' : 'Queued'}
+                    </p>
+                  </div>
+                  <span style={{
+                    fontSize: 9, fontWeight: 700, padding: '2px 6px', borderRadius: 4, letterSpacing: '0.06em', textTransform: 'uppercase',
+                    color: run.status === 'complete' ? '#22c55e' : run.status === 'failed' ? '#E14A2D' : '#D97706',
+                    background: run.status === 'complete' ? 'rgba(34,197,94,0.08)' : run.status === 'failed' ? 'rgba(225,74,45,0.08)' : 'rgba(217,119,6,0.08)',
+                  }}>{run.status}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <div style={{ height: 1, background: '#F1F5F9' }} />
+
+          {/* Company durability list */}
+          <div>
+            <p style={{ fontSize: 10, fontWeight: 600, color: '#94A3B8', letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: 12 }}>Durability Triage</p>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+              {mockCollisionReports.sort((a, b) => b.collision_flag_count - a.collision_flag_count).map(r => {
+                const ds = DUR[r.revenue_durability]
+                return (
+                  <Link key={r.id} href={`/company/${r.company_id}`} style={{ textDecoration: 'none' }}>
+                    <div style={{
+                      padding: '8px 10px', borderRadius: 8,
+                      background: ds.bg, border: `1px solid ${ds.fg}20`,
+                      display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                      transition: 'all 0.12s',
+                    }}
+                    onMouseEnter={e => { (e.currentTarget as HTMLElement).style.borderColor = ds.fg + '50' }}
+                    onMouseLeave={e => { (e.currentTarget as HTMLElement).style.borderColor = ds.fg + '20' }}
+                    >
+                      <div>
+                        <p style={{ fontSize: 11, fontWeight: 600, color: '#0F172A', marginBottom: 1 }}>{r.company_name.split(' ').slice(0,2).join(' ')}</p>
+                        <p style={{ fontSize: 9, fontFamily: "'JetBrains Mono', monospace", color: '#E14A2D' }}>{r.ebitda_extreme_pct.toFixed(1)}% extreme</p>
+                      </div>
+                      <span style={{ fontSize: 9, fontWeight: 700, padding: '2px 7px', borderRadius: 4, color: ds.fg, background: '#fff', border: `1px solid ${ds.fg}30`, letterSpacing: '0.06em', textTransform: 'uppercase' }}>
+                        {r.revenue_durability}
+                      </span>
+                    </div>
+                  </Link>
+                )
+              })}
+            </div>
+          </div>
+
+        </div>
       </div>
     </div>
   )
