@@ -3,7 +3,7 @@ import { mockPortfolio, mockCompanies, mockPortfolioExposure, mockCollisionRepor
 import { CONSTRAINT_LABELS } from '@/lib/types'
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell } from 'recharts'
 import Link from 'next/link'
-import { ArrowUpRight, CheckCircle, Clock, AlertTriangle, Network } from 'lucide-react'
+import { ArrowUpRight, CheckCircle, Clock, AlertTriangle, Network, Search } from 'lucide-react'
 
 const fmt  = (n: number) => `€${(n / 1_000_000).toFixed(0)}M`
 const fmtB = (n: number) => `€${(n / 1_000_000_000).toFixed(1)}B`
@@ -127,7 +127,7 @@ export default function DashboardPage() {
             <p className="text-[11px] text-slate-400 mb-5">Constraint exposure relative to revenue resilience.</p>
             <div className="flex flex-col gap-4 flex-1">
               {mockCollisionReports.map(r => (
-                <Link key={r.id} href={`/claim-verification/${r.company_id}`} className="group block">
+                <Link key={r.id} href={`/company/${r.company_id}`} className="group block">
                   <div className="flex items-center justify-between mb-1.5">
                     <span className="text-[12px] font-medium text-slate-700 group-hover:text-slate-900 transition-colors">
                       {r.company_name.split(' ')[0]}
@@ -202,15 +202,15 @@ export default function DashboardPage() {
                       {c.disclosure_status === 'complete' && (
                         <div className="flex items-center gap-3 justify-end">
                           <Link
-                            href="/exposure-map"
+                            href={`/company/${c.id}`}
                             className="flex items-center gap-1 text-[11px] font-medium text-slate-700 hover:text-slate-900 px-2.5 py-1 rounded-md bg-slate-100 hover:bg-slate-200 transition-colors"
                           >
-                            <Network size={10} />
-                            Exposure Map
+                            <Search size={10} />
+                            Analyse
                           </Link>
                           {report && (
                             <Link
-                              href={`/claim-verification/${c.id}`}
+                              href={`/company/${c.id}`}
                               className="flex items-center gap-1 text-[11px] font-medium text-red-600 hover:text-red-800 px-2.5 py-1 rounded-md bg-red-50 hover:bg-red-100 transition-colors"
                             >
                               {report.collision_flag_count} flags
